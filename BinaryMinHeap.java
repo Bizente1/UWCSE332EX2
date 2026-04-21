@@ -4,15 +4,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<T> {
+public class BinaryMinHeap<T extends Comparable<T>> implements MyPriorityQueue<T> {
     private int size; // Maintains the size of the data structure
     private T[] arr; // The array containing all items in the data structure
                      // index 0 must be utilized
     private Map<T, Integer> itemToIndex; // Keeps track of which index of arr holds each item.
 
-    public BinaryMinHeap(){
+    public BinaryMinHeap() {
         // This line just creates an array of type T. We're doing it this way just
-        // because of weird java generics stuff (that I frankly don't totally understand)
+        // because of weird java generics stuff (that I frankly don't totally
+        // understand)
         // If you want to create a new array anywhere else (e.g. to resize) then
         // You should mimic this line. The second argument is the size of the new array.
         arr = (T[]) Array.newInstance(Comparable.class, 10);
@@ -22,105 +23,114 @@ public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<
 
     // move the item at index i "rootward" until
     // the heap property holds
-    private void percolateUp(int i){
-        int parent = i/2; 
-        T val = arr[i]; 
-        while(i > 1 && (arr[i].compareTo(arr[parent]) < 0)){ 
-        arr[i] = arr[parent];
-        itemToIndex.put(arr[parent], i);
-        arr[parent] = val; 
-        i = parent;
-        itemToIndex.put(val, i); 
-        parent = i/2;
+    private void percolateUp(int i) {
 
-        
- }
+        while (i > 0) {
+            int parent = (i - 1) / 2;
 
+            if (arr[i].compareTo(arr[parent]) < 0) {
+                T val = arr[i];
+                arr[i] = arr[parent];
+                arr[parent] = val;
+
+                itemToIndex.put(arr[i], i);
+                itemToIndex.put(arr[parent], parent);
+
+                i = parent;
+            } else {
+                return;
+            }
+        }
     }
 
     // move the item at index i "leafward" until
     // the heap property holds
-    private void percolateDown(int i){
-        int left = i*2;
-        int right = i*2+1; 
-        T val = arr[i]; 
-        while(left <= size){
-            int toSwap = right;
-            if(arr[right] != null || arr[left].compareTo(arr[right]) < 0){ 
-                toSwap = left; 
-            } 
-            if (arr[toSwap].compareTo(val) < 0){ 
-                arr[i] = arr[toSwap];
-                arr[toSwap] = val; 
-                i = toSwap;
-                left = i*2;
-                right = i*2+1;
+    private void percolateDown(int i) {
+
+        while (i * 2 + 1 < size) {
+            int left = i * 2 + 1;
+            int right = i * 2 + 2;
+            int toSwap = left;
+
+            if (right < size && arr[right].compareTo(arr[left]) < 0) {
+                toSwap = right;
             }
-            else{
-                break;
+
+            if (arr[toSwap].compareTo(arr[i]) < 0) {
+                T val = arr[i];
+                arr[i] = arr[toSwap];
+                arr[toSwap] = val;
+
+                itemToIndex.put(arr[i], i);
+                itemToIndex.put(arr[toSwap], toSwap);
+
+                i = toSwap;
+
+            } else {
+                return;
             }
         }
 
     }
 
     // copy all items into a larger array to make more room.
-    private void resize(){
-        T[] larger = (T[]) Array.newInstance(Comparable.class, arr.length*2);
-        for(int i = 0; i < arr.length; i++){
+    private void resize() {
+        T[] larger = (T[]) Array.newInstance(Comparable.class, arr.length * 2);
+        for (int i = 0; i < arr.length; i++) {
             larger[i] = arr[i];
         }
         arr = larger;
     }
 
-    public void insert(T item){
-         if(size == arr.length - 1){
+    public void insert(T item) {
+        if (size == arr.length) {
             resize();
         }
-        size++;
         arr[size] = item;
+        itemToIndex.put(item, size);
         percolateUp(size);
+        size++;
 
     }
 
-
-    public T extract(){
-        T theMin = arr[1];
-        arr[1] = arr[size];
+    public T extract() {
+        if (isEmpty()) {
+            throw new IllegalStateException();
+        }
+        T theMin = arr[0];
+        arr[0] = arr[size - 1];
         size--;
-        percolateDown(1);
+        itemToIndex.remove(theMin);
+
+        if (size > 0) {
+            itemToIndex.put(arr[0], 0);
+            percolateDown(0);
+        }
+
         return theMin;
     }
 
     // Remove the item at the given index.
     // Make sure to maintain the heap property!
-    private T remove(int index){
-        int left = index*2;
-        int right = index*2+1; 
-        T val = arr[index];
-        if(arr[left] != null){
-            arr[index] = arr[left];
-            itemToIndex.put(arr[left], index);
-            arr[left] = null;
-        }else if(arr[right] != null){
-            arr[index] = arr[left];
-            itemToIndex.put(arr[left], index);
-            arr[right] = null;
-        }else{
-            arr[index] = null;
-            itemToIndex.remove(val);
+    private T remove(int index) {
+        T toRemoved = arr[index];
+        size--;
+        arr[index] = arr[size];
+
+        itemToIndex.remove(toRemoved);
+
+        if (index < size) {
+            itemToIndex.put(arr[index], index);
+            updatePriority(index);
         }
-        itemToIndex.remove(val);
-        return val;
 
-
-        
-        
+        return toRemoved;
     }
 
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public void remove(T item){
-        if (!itemToIndex.containsKey(item)){
+    public void remove(T item) {
+        if (!itemToIndex.containsKey(item)) {
             throw new IllegalArgumentException();
         }
         remove(itemToIndex.get(item));
@@ -128,67 +138,74 @@ public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<
 
     // Determine whether to percolate up/down
     // the item at the given index, then do it!
-    private void updatePriority(int index){
-        pre
+    private void updatePriority(int index) {
+        int parent = (index - 1) / 2;
+
+        if (index > 0 && arr[index].compareTo(arr[parent]) < 0) {
+            percolateUp(index);
+        } else {
+            percolateDown(index);
+        }
+
     }
 
-    // This method gets called after the client has 
+    // This method gets called after the client has
     // changed an item in a way that may change its
     // priority. In this case, the client should call
-    // updatePriority on that changed item so that 
+    // updatePriority on that changed item so that
     // the heap can restore the heap property.
     // Throws an IllegalArgumentException if the given
     // item is not an element of the priority queue.
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public void updatePriority(T item){
-	    if(!itemToIndex.containsKey(item)){
+    public void updatePriority(T item) {
+        if (!itemToIndex.containsKey(item)) {
             throw new IllegalArgumentException("Given item is not present in the priority queue!");
-	    }
+        }
         updatePriority(itemToIndex.get(item));
     }
 
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return size == 0;
     }
 
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public int size(){
+    public int size() {
         return size;
     }
 
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public T peek(){
-        if(isEmpty()){
+    public T peek() {
+        if (isEmpty()) {
             throw new IllegalStateException();
         }
         return arr[0];
     }
-    
+
     // We have provided a recommended implementation
     // You're welcome to do something different, though!
-    public List<T> toList(){
+    public List<T> toList() {
         List<T> copy = new ArrayList<>();
-        for(int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             copy.add(i, arr[i]);
         }
         return copy;
     }
 
     // For debugging
-    public String toString(){
-        if(size == 0){
+    public String toString() {
+        if (size == 0) {
             return "[]";
         }
         String str = "[(" + arr[0] + " " + itemToIndex.get(arr[0]) + ")";
-        for(int i = 1; i < size; i++ ){
+        for (int i = 1; i < size; i++) {
             str += ",(" + arr[i] + " " + itemToIndex.get(arr[i]) + ")";
         }
         return str + "]";
     }
-    
+
 }
