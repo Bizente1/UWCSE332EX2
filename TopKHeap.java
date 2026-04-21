@@ -30,17 +30,16 @@ public class TopKHeap<T extends Comparable<T>> {
     public void insert(T item) {
         if (topK.size() < k) {
             topK.insert(item);
-            itemToHeap.put(item, topK);
         } else if (!topK.isEmpty() && item.compareTo(topK.peek()) > 0) {
             demote();
 
             topK.insert(item);
-            itemToHeap.put(item, topK);
+            
         } else {
 
             rest.insert(item);
-            itemToHeap.put(item, rest);
         }
+        itemToHeap.put(item, topK);
     }
 
     // Indicates whether the given item is among the
