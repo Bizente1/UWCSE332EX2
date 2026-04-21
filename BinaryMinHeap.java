@@ -23,11 +23,44 @@ public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<
     // move the item at index i "rootward" until
     // the heap property holds
     private void percolateUp(int i){
+        int parent = i/2; 
+        T val = arr[i]; 
+        while(i > 1 && (arr[i].compareTo(arr[parent]) < 0)){ 
+        arr[i] = arr[parent];
+        itemToIndex.put(arr[parent], i);
+        arr[parent] = val; 
+        i = parent;
+        itemToIndex.put(val, i); 
+        parent = i/2;
+
+        
+ }
+
     }
 
     // move the item at index i "leafward" until
     // the heap property holds
     private void percolateDown(int i){
+        int left = i*2;
+        int right = i*2+1; 
+        T val = arr[i]; 
+        while(left <= size){
+            int toSwap = right;
+            if(arr[right] != null || arr[left].compareTo(arr[right]) < 0){ 
+                toSwap = left; 
+            } 
+            if (arr[toSwap].compareTo(val) < 0){ 
+                arr[i] = arr[toSwap];
+                arr[toSwap] = val; 
+                i = toSwap;
+                left = i*2;
+                right = i*2+1;
+            }
+            else{
+                break;
+            }
+        }
+
     }
 
     // copy all items into a larger array to make more room.
@@ -40,15 +73,48 @@ public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<
     }
 
     public void insert(T item){
+         if(size == arr.length - 1){
+            resize();
+        }
+        size++;
+        arr[size] = item;
+        percolateUp(size);
+
     }
 
 
     public T extract(){
+        T theMin = arr[1];
+        arr[1] = arr[size];
+        size--;
+        percolateDown(1);
+        return theMin;
     }
 
     // Remove the item at the given index.
     // Make sure to maintain the heap property!
     private T remove(int index){
+        int left = index*2;
+        int right = index*2+1; 
+        T val = arr[index];
+        if(arr[left] != null){
+            arr[index] = arr[left];
+            itemToIndex.put(arr[left], index);
+            arr[left] = null;
+        }else if(arr[right] != null){
+            arr[index] = arr[left];
+            itemToIndex.put(arr[left], index);
+            arr[right] = null;
+        }else{
+            arr[index] = null;
+            itemToIndex.remove(val);
+        }
+        itemToIndex.remove(val);
+        return val;
+
+
+        
+        
     }
 
     // We have provided a recommended implementation
@@ -63,6 +129,7 @@ public class BinaryMinHeap <T extends Comparable<T>> implements MyPriorityQueue<
     // Determine whether to percolate up/down
     // the item at the given index, then do it!
     private void updatePriority(int index){
+        pre
     }
 
     // This method gets called after the client has 
